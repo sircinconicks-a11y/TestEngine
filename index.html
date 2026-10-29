@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Test Engine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --stimulus-bg: #f1f5f9;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --error: #dc2626;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        body.dark-mode {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --stimulus-bg: #334155;
+            --border: #334155;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        body {
+            -webkit-user-select: none; 
+            user-select: none;
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh;
+            min-height: 100dvh; /* iOS Safari dynamic viewport fix */
+            padding: 12px;
+            padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));
+        }
+
+        input[type="text"], input[type="password"] { 
+            -webkit-user-select: text !important; 
+            user-select: text !important;
+            padding: 12px; 
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-md); 
+            font-size: 1rem; 
+            width: 100%;
+            background: var(--card-bg);
+            color: var(--text);
+            -webkit-appearance: none; /* iOS input styling reset */
+            appearance: none;
+        }
+
+        input[type="text"] { text-transform: uppercase; }
+        input[type="text"]::placeholder { text-transform: none; color: #94a3b8; opacity: 1; }
+
+        .deck-container {
+            width: 100%; 
+            max-width: 950px; 
+            background: var(--card-bg); 
+            border-radius: var(--radius-lg);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); 
+            border: 1px solid var(--border);
+            display: flex; 
+            flex-direction: column; 
+            height: 92vh;
+            height: 92dvh; /* iOS Safari height stabilization */
+            overflow: hidden; 
+            position: relative;
+        }
+
+        .top-bar { 
+            padding: 12px 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border); 
+            background: var(--card-bg); 
+            flex-shrink: 0;
+        }
+        
+        .bar-group { display: flex; align-items: center; gap: 12px; }
+        .brand-logo { font-size: 0.85rem; font-weight: 700; color: var(--primary); }
+        .timer-display { font-size: 0.85rem; font-weight: 600; color: var(--error); background: #ffeeec; padding: 4px 8px; border-radius: 4px; display: none; }
+        body.dark-mode .timer-display { background: #451a1a; }
+        .btn-theme-toggle { background: var(--card-bg); border: 1px solid var(--border); padding: 6px 10px; border-radius: var(--radius-md); cursor: pointer; font-size: 1.1rem; color: var(--text); }
+        
+        .progress-bar-container { width: 100%; height: 4px; background: var(--border); flex-shrink: 0; }
+        .progress-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; }
+        
+        main { 
+            padding: 20px; 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* Smooth iOS scrolling */
+        }
+        
+        .slide-header { display: flex; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; font-size: 0.75rem; text-transform: uppercase; color: var(--primary); font-weight: 600; }
+        h2 { font-size: 1.2rem; margin-bottom: 16px; color: var(--text); line-height: 1.4; }
+        .layout-split { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        @media (min-width: 768px) { .layout-split.has-stimulus { grid-template-columns: 1fr 1fr; } main { padding: 36px; } }
+        .stimulus-box { background: var(--stimulus-bg); border-left: 4px solid var(--primary); padding: 16px; border-radius: var(--radius-md); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.5; }
+        
+        .options-container { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border); 
+            padding: 14px; 
+            border-radius: var(--radius-md); 
+            text-align: left; 
+            cursor: pointer; 
+            color: var(--text); 
+            font-size: 0.95rem; 
+            touch-action: manipulation;
+        }
+        .option-btn:hover { border-color: var(--primary); }
+        .option-btn.selected { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .center-slide { text-align: center; justify-content: center; align-items: center; }
+        .score-display { font-size: 3rem; font-weight: 700; color: var(--primary); margin: 4px 0; }
+        
+        .identity-box { background: var(--stimulus-bg); border: 1px solid var(--border); padding: 16px; border-radius: var(--radius-md); width: 100%; max-width: 400px; margin: 12px auto; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+
+        .results-meta-card {
+            background: var(--stimulus-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            width: 100%;
+            max-width: 420px;
+            margin: 12px auto;
+            text-align: left;
+            font-size: 0.88rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .results-meta-card span { font-weight: 600; color: var(--text); }
+
+        .results-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 12px; width: 100%; max-width: 420px; }
+
+        footer { display: flex; justify-content: space-between; padding: 14px 20px; background: var(--card-bg); border-top: 1px solid var(--border); flex-shrink: 0; }
+        .btn { padding: 12px 20px; border-radius: var(--radius-md); font-weight: 500; cursor: pointer; border: none; font-size: 0.9rem; touch-action: manipulation; width: 100%; }
+        footer .btn { width: auto; }
+        .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-metrics-export { background: #10b981; color: white; }
+        .btn-retake { background: #f59e0b; color: white; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .notification-toast {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+            border: 1px solid #334155;
+            width: 90%;
+            max-width: 400px;
+            justify-content: center;
+        }
+        .notification-toast.show { transform: translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+    <div class="deck-container">
+        <header class="top-bar">
+            <div class="bar-group">
+                <span id="view-indicator" class="brand-logo">Test Engine</span>
+            </div>
+            <div class="bar-group">
+                <div id="timer-badge" class="timer-display">⏱️ <span id="time-remaining">00:00</span></div>
+                <button id="unload-test-btn" class="btn-theme-toggle" title="Reset Assessment">🔄</button>
+                <input type="file" id="file-input" accept=".json,application/json" style="display: none;">
+                <button id="theme-toggle-btn" class="btn-theme-toggle" aria-label="Toggle Dark Mode">☀️</button>
+            </div>
+        </header>
+
+        <div class="progress-bar-container"><div id="progress-bar" class="progress-bar"></div></div>
+        <main id="viewport-canvas"></main>
+        
+        <footer id="footer-navigation" style="display: none;">
+            <button id="back-btn" class="btn btn-secondary">Previous</button>
+            <button id="forward-btn" class="btn btn-primary">Next</button>
+        </footer>
+
+        <div id="notification-toast" class="notification-toast">
+            <span>✅</span> <span id="toast-message">Operation successful!</span>
+        </div>
+    </div>
+
+    <script>
+        class SecureQuizApp {
+            constructor() {
+                this.originalQuizData = [];
+                this.shuffledQuizData = [];
+                this.userAnswers = []; 
+                this.questionTimestamps = []; 
+                
+                this.studentName = "";
+                this.studentSection = "";
+                this.examTitle = "";
+                this.targetPasscode = "";
+                this.currentQuizLocked = false;
+                this.timeLimitMinutes = 0;
+                this.timerInterval = null;
+                
+                // Timestamp-based accurate timing (Fixes iOS background tab throttling)
+                this.timerEndTimestamp = null;
+                
+                this.testStartTime = null;
+                this.testCompletionTime = null;
+                
+                this.currentSlideIdx = 0;
+                this.activeQuestionIdx = null; 
+                this.slideStartTime = null;
+
+                this.cacheElements();
+                this.bindEventListeners();
+                this.syncView();
+            }
+
+            cacheElements() {
+                this.viewIndicator = document.getElementById('view-indicator');
+                this.canvas = document.getElementById('viewport-canvas');
+                this.footer = document.getElementById('footer-navigation');
+                this.fileInput = document.getElementById('file-input');
+                this.progressBar = document.getElementById('progress-bar');
+                this.timerBadge = document.getElementById('timer-badge');
+                this.timeRemainingSpan = document.getElementById('time-remaining');
+                this.toast = document.getElementById('notification-toast');
+                this.toastMessage = document.getElementById('toast-message');
+            }
+
+            showToast(message) {
+                this.toastMessage.innerText = message;
+                this.toast.classList.add('show');
+                setTimeout(() => this.toast.classList.remove('show'), 3500);
+            }
+
+            bindEventListeners() {
+                document.getElementById('back-btn').addEventListener('click', () => this.navigateSlide(-1));
+                document.getElementById('forward-btn').addEventListener('click', () => this.handleForwardNavigation());
+                document.getElementById('theme-toggle-btn').addEventListener('click', () => document.body.classList.toggle('dark-mode'));
+                
+                document.getElementById('unload-test-btn').addEventListener('click', () => {
+                    if (confirm("⚠️ WARNING: Resetting will erase your test progress. Proceed?")) {
+                        this.resetApp();
+                    }
+                });
+
+                this.fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        try {
+                            const parsedData = JSON.parse(ev.target.result);
+                            this.handleImportedData(parsedData);
+                        } catch (err) {
+                            alert("❌ Error parsing JSON packet: " + err.message);
+                        } finally {
+                            e.target.value = '';
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            handleImportedData(data) {
+                this.originalQuizData = data.quizData || [];
+                this.examTitle = data.examTitle || "Secure Assessment";
+                this.currentQuizLocked = !!data.quizLocked;
+                this.targetPasscode = data.passcode || "";
+                this.timeLimitMinutes = data.timeLimitMinutes || 0;
+                
+                if (this.originalQuizData.length === 0) {
+                    alert("❌ Loaded JSON contains no question data.");
+                    return;
+                }
+
+                this.applyShuffling(this.originalQuizData);
+                this.currentSlideIdx = 0;
+                this.syncView();
+            }
+
+            applyShuffling(data) {
+                let mappedData = data.map((item, idx) => ({
+                    ...item,
+                    id: item.id || `Q${idx + 1}`,
+                    originalQuestionIndex: idx,
+                    mappedOptions: item.options.map((opt, optIdx) => ({ text: opt, originalOptionIndex: optIdx }))
+                }));
+
+                this.shuffleArray(mappedData);
+
+                mappedData.forEach(q => {
+                    this.shuffleArray(q.mappedOptions);
+                });
+
+                this.shuffledQuizData = mappedData;
+                this.userAnswers = new Array(this.shuffledQuizData.length).fill(null);
+                this.questionTimestamps = new Array(this.shuffledQuizData.length).fill(0);
+            }
+
+            startTimer() {
+                if (this.timeLimitMinutes <= 0) return;
+                
+                const now = Date.now();
+                this.timerEndTimestamp = now + (this.timeLimitMinutes * 60 * 1000);
+                this.timerBadge.style.display = 'block';
+                
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                
+                this.timerInterval = setInterval(() => {
+                    const remainingMs = this.timerEndTimestamp - Date.now();
+                    const remainingSecs = Math.max(0, Math.floor(remainingMs / 1000));
+                    
+                    let mins = Math.floor(remainingSecs / 60);
+                    let secs = remainingSecs % 60;
+                    this.timeRemainingSpan.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    
+                    if (remainingSecs <= 0) {
+                        clearInterval(this.timerInterval);
+                        this.showToast("⏰ Time expired! Assessment auto-submitted.");
+                        this.jumpToSlide(this.shuffledQuizData.length + 1);
+                    }
+                }, 1000);
+            }
+
+            trackActiveQuestionTime() {
+                if (this.slideStartTime !== null && this.activeQuestionIdx !== null) {
+                    const elapsed = (Date.now() - this.slideStartTime) / 1000;
+                    this.questionTimestamps[this.activeQuestionIdx] += elapsed;
+                }
+                this.slideStartTime = null;
+                this.activeQuestionIdx = null;
+            }
+
+            syncView() {
+                const totalQs = this.shuffledQuizData.length;
+                this.canvas.classList.remove('center-slide');
+                
+                if (this.currentSlideIdx > 0 && this.currentSlideIdx <= totalQs) {
+                    this.viewIndicator.innerText = this.examTitle;
+                    this.renderCoreQuestionView();
+                } else {
+                    this.trackActiveQuestionTime();
+                    if (this.timerInterval) clearInterval(this.timerInterval);
+                    this.timerBadge.style.display = 'none';
+
+                    if (this.currentSlideIdx === 0) {
+                        this.renderWelcomeView();
+                    } else {
+                        this.viewIndicator.innerText = "Results Mode";
+                        this.renderEvaluationReportView();
+                    }
+                }
+            }
+
+            renderWelcomeView() {
+                this.footer.style.display = 'none';
+                this.progressBar.style.width = '0%';
+                this.canvas.classList.add('center-slide');
+
+                if (this.shuffledQuizData.length === 0) {
+                    this.canvas.innerHTML = `
+                        <h1 style="margin-bottom: 12px;">Test Engine</h1>
+                        <p style="color:var(--text-secondary); margin-bottom: 20px;">Please upload your assessment JSON file to begin.</p>
+                        <button class="btn btn-primary" id="load-initial-json" style="max-width:300px;">LOAD TEST PACKET</button>`;
+                    document.getElementById('load-initial-json').addEventListener('click', () => this.fileInput.click());
+                } else {
+                    this.canvas.innerHTML = `
+                        <h1 style="margin-bottom: 8px;">${this.escapeHTML(this.examTitle)}</h1>
+                        ${this.currentQuizLocked ? '<div style="color:var(--primary); font-weight:600; margin-bottom:8px;">🔒 Secure Session</div>' : ''}
+                        ${this.timeLimitMinutes > 0 ? `<div style="color:var(--error); font-weight:600; margin-bottom:8px;">⏳ Time Limit: ${this.timeLimitMinutes} Minutes</div>` : ''}
+                        <div class="identity-box">
+                            <label for="student-name">Full Name:</label>
+                            <input type="text" id="student-name" value="${this.escapeHTML(this.studentName)}" placeholder="DELA CRUZ, JUAN" autocomplete="off" autocorrect="off" autocapitalize="characters">
+                            <label for="student-section">Section:</label>
+                            <input type="text" id="student-section" value="${this.escapeHTML(this.studentSection)}" placeholder="7-ACACIA" autocomplete="off" autocorrect="off" autocapitalize="characters">
+                            ${this.currentQuizLocked ? '<label for="student-passcode">Assessment Passcode:</label><input type="password" id="student-passcode" placeholder="Enter code">' : ''}
+                        </div>
+                        <button class="btn btn-primary" id="start-quiz-btn" style="max-width:400px; margin-top:8px;">Start Assessment</button>
+                    `;
+                    
+                    const nameInput = document.getElementById('student-name');
+                    const sectionInput = document.getElementById('student-section');
+
+                    nameInput.addEventListener('input', e => {
+                        e.target.value = e.target.value.toUpperCase();
+                        this.studentName = e.target.value;
+                    });
+                    sectionInput.addEventListener('input', e => {
+                        e.target.value = e.target.value.toUpperCase();
+                        this.studentSection = e.target.value;
+                    });
+                    
+                    document.getElementById('start-quiz-btn').addEventListener('click', () => {
+                        if (!this.studentName.trim() || !this.studentSection.trim()) {
+                            return alert("Student identity fields are required.");
+                        }
+                        
+                        if (this.currentQuizLocked) {
+                            const passInput = document.getElementById('student-passcode').value;
+                            if (passInput !== this.targetPasscode) {
+                                return alert("❌ Invalid Passcode. Access Denied.");
+                            }
+                        }
+                        this.testStartTime = Date.now();
+                        this.startTimer();
+                        this.navigateSlide(1);
+                    });
+                }
+            }
+
+            renderCoreQuestionView() {
+                this.trackActiveQuestionTime();
+
+                const sIdx = this.currentSlideIdx - 1;
+                this.activeQuestionIdx = sIdx;
+                this.slideStartTime = Date.now();
+
+                this.footer.style.display = 'flex';
+                document.getElementById('back-btn').disabled = this.currentSlideIdx === 1;
+                document.getElementById('forward-btn').innerText = this.currentSlideIdx === this.shuffledQuizData.length ? 'Submit' : 'Next';
+                this.progressBar.style.width = `${(this.currentSlideIdx / this.shuffledQuizData.length) * 100}%`;
+
+                const activeItem = this.shuffledQuizData[sIdx];
+
+                this.canvas.innerHTML = `
+                    <div class="slide-header">
+                        <span>Question ${this.currentSlideIdx} of ${this.shuffledQuizData.length}</span>
+                    </div>
+                    <div class="layout-split ${activeItem.stimulus && activeItem.stimulus.trim() !== "" ? 'has-stimulus' : ''}">
+                        ${activeItem.stimulus && activeItem.stimulus.trim() !== "" ? `<div class="stimulus-box">${this.escapeHTML(activeItem.stimulus)}</div>` : ''}
+                        <div>
+                            <h2>${this.escapeHTML(activeItem.question)}</h2>
+                            <div class="options-container" id="options-box"></div>
+                        </div>
+                    </div>
+                `;
+
+                const box = document.getElementById('options-box');
+                activeItem.mappedOptions.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = `option-btn ${this.userAnswers[sIdx] === idx ? 'selected' : ''}`;
+                    btn.innerText = opt.text;
+                    btn.onclick = () => { 
+                        this.userAnswers[sIdx] = idx; 
+                        Array.from(box.children).forEach((child, cIdx) => {
+                            child.classList.toggle('selected', cIdx === idx);
+                        });
+                    };
+                    box.appendChild(btn);
+                });
+            }
+
+            renderEvaluationReportView() {
+                this.testCompletionTime = Date.now();
+                this.footer.style.display = 'none';
+                this.progressBar.style.width = '100%';
+                this.canvas.classList.add('center-slide');
+
+                let totalScore = 0;
+                let maxPossibleScore = 0;
+
+                this.shuffledQuizData.forEach((q, idx) => {
+                    const itemPoints = Number(q.points) || 1;
+                    maxPossibleScore += itemPoints;
+
+                    const userOptIdx = this.userAnswers[idx];
+                    if (userOptIdx !== null) {
+                        const selectedOpt = q.mappedOptions[userOptIdx];
+                        const originalQ = this.originalQuizData[q.originalQuestionIndex];
+                        if (this.checkCorrectness(selectedOpt, originalQ)) {
+                            totalScore += itemPoints;
+                        }
+                    }
+                });
+
+                let durationString = "N/A";
+                if (this.testStartTime) {
+                    const totalSecs = Math.floor((this.testCompletionTime - this.testStartTime) / 1000);
+                    const mins = Math.floor(totalSecs / 60);
+                    const secs = totalSecs % 60;
+                    durationString = `${mins}m ${secs}s`;
+                }
+
+                const completionDateStr = new Date(this.testCompletionTime).toLocaleString();
+
+                this.canvas.innerHTML = `
+                    <div>
+                        <h1>Assessment Complete</h1>
+                        <div class="score-display">${totalScore} / ${maxPossibleScore}</div>
+                        
+                        <div class="results-meta-card">
+                            <div>👤 Name: <span>${this.escapeHTML(this.studentName)}</span></div>
+                            <div>🏫 Section: <span>${this.escapeHTML(this.studentSection)}</span></div>
+                            <div>📅 Date Finished: <span>${completionDateStr}</span></div>
+                            <div>⏱️ Time Elapsed: <span>${durationString}</span></div>
+                        </div>
+
+                        <div class="results-actions">
+                            <button class="btn btn-metrics-export" id="secure-metrics-btn">🔒 Export / Share Telemetry</button>
+                            ${!this.currentQuizLocked ? '<button class="btn btn-retake" id="retake-quiz-btn">🔄 Retake Assessment</button>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('secure-metrics-btn').onclick = () => this.exportTelemetryMetrics(totalScore, maxPossibleScore);
+                
+                if (!this.currentQuizLocked) {
+                    document.getElementById('retake-quiz-btn').onclick = () => this.retakeAssessment();
+                }
+            }
+
+            retakeAssessment() {
+                this.applyShuffling(this.originalQuizData);
+                this.currentSlideIdx = 1;
+                this.testStartTime = Date.now();
+                this.testCompletionTime = null;
+                this.startTimer();
+                this.syncView();
+            }
+
+            checkCorrectness(selectedOpt, originalQ) {
+                const selectedIdx = selectedOpt.originalOptionIndex;
+                const correctVal = originalQ.correct;
+
+                if (String(selectedIdx) === String(correctVal) || selectedOpt.text === correctVal) return true;
+                if (String(selectedIdx + 1) === String(correctVal)) return true;
+
+                if (typeof correctVal === 'string' && correctVal.trim().length === 1) {
+                    const letterIdx = correctVal.trim().toUpperCase().charCodeAt(0) - 65;
+                    if (selectedIdx === letterIdx) return true;
+                }
+
+                return false;
+            }
+
+            handleForwardNavigation() {
+                if (this.currentSlideIdx === this.shuffledQuizData.length) {
+                    const firstBlank = this.userAnswers.findIndex(ans => ans === null);
+                    if (firstBlank !== -1) {
+                        alert(`❌ Incomplete Assessment. Jumping to unanswered question ${firstBlank + 1}.`);
+                        this.jumpToSlide(firstBlank + 1);
+                        return;
+                    }
+                    if (confirm("Finalize and submit your answers?")) this.navigateSlide(1);
+                } else {
+                    this.navigateSlide(1);
+                }
+            }
+
+            navigateSlide(dir) { 
+                this.currentSlideIdx += dir; 
+                this.syncView(); 
+            }
+            
+            jumpToSlide(num) { 
+                this.currentSlideIdx = num; 
+                this.syncView(); 
+            }
+
+            async exportTelemetryMetrics(score, maxScore) {
+                let reconstructedTelemetry = new Array(this.originalQuizData.length);
+
+                this.shuffledQuizData.forEach((q, shuffledIdx) => {
+                    const userOptIdx = this.userAnswers[shuffledIdx];
+                    let selectedOriginalOptIdx = null;
+                    let isCorrect = false;
+
+                    if (userOptIdx !== null) {
+                        const selectedOpt = q.mappedOptions[userOptIdx];
+                        selectedOriginalOptIdx = selectedOpt.originalOptionIndex;
+                        const originalQ = this.originalQuizData[q.originalQuestionIndex];
+                        isCorrect = this.checkCorrectness(selectedOpt, originalQ);
+                    }
+
+                    reconstructedTelemetry[q.originalQuestionIndex] = {
+                        questionId: q.id,
+                        originalIndex: q.originalQuestionIndex + 1,
+                        stimulus: q.stimulus || "",
+                        questionText: q.question,
+                        timeSpentSeconds: Math.round(this.questionTimestamps[shuffledIdx] || 0),
+                        selectedOptionIndex: selectedOriginalOptIdx,
+                        correctOptionIndex: this.originalQuizData[q.originalQuestionIndex].correct,
+                        isCorrect: isCorrect
+                    };
+                });
+
+                const payload = {
+                    dataType: "SECURE_TELEMETRY_ITEM_ANALYSIS",
+                    examTitle: this.examTitle,
+                    studentName: this.studentName,
+                    section: this.studentSection,
+                    finalScore: score,
+                    maxPossibleScore: maxScore,
+                    totalQuestions: this.originalQuizData.length,
+                    itemTelemetry: reconstructedTelemetry,
+                    timestamp: new Date().toISOString()
+                };
+
+                const jsonStr = JSON.stringify(payload, null, 4);
+                const cleanName = this.studentName.trim().replace(/\s+/g, '_');
+                const cleanSection = this.studentSection.trim().replace(/\s+/g, '_');
+                const cleanTitle = this.examTitle.trim().replace(/\s+/g, '_');
+                const filename = `METRICS_${cleanSection}_${cleanName}_${cleanTitle}.json`;
+
+                // 1. Try iOS Web Share API (Primary strategy for iPhone/iPad)
+                if (navigator.share) {
+                    try {
+                        const file = new File([jsonStr], filename, { type: 'application/json' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'Telemetry Metrics',
+                                text: `Assessment metrics for ${this.studentName}`
+                            });
+                            this.showToast("Shared telemetry successfully!");
+                            return;
+                        }
+                    } catch (shareErr) {
+                        if (shareErr.name !== 'AbortError') {
+                            console.warn("Web Share API failed, falling back...", shareErr);
+                        } else {
+                            return; // User intentionally cancelled share sheet
+                        }
+                    }
+                }
+
+                // 2. Standard Blob Download (Desktop & Android fallback)
+                try {
+                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; 
+                    a.download = filename;
+                    document.body.appendChild(a); 
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    this.showToast("Telemetry file exported!");
+                    return;
+                } catch (dlErr) {
+                    console.warn("Direct file download failed, falling to clipboard fallback.", dlErr);
+                }
+
+                // 3. Fallback: Copy JSON Payload to Clipboard
+                try {
+                    await navigator.clipboard.writeText(jsonStr);
+                    alert("📋 Telemetry JSON copied to clipboard! You can now paste it into a file or message.");
+                } catch (clipErr) {
+                    alert("❌ Could not save file directly. Please take a screenshot of your results screen.");
+                }
+            }
+
+            resetApp() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+                this.originalQuizData = [];
+                this.shuffledQuizData = [];
+                this.userAnswers = [];
+                this.questionTimestamps = [];
+                this.studentName = "";
+                this.studentSection = "";
+                this.testStartTime = null;
+                this.testCompletionTime = null;
+                this.timerEndTimestamp = null;
+                this.currentSlideIdx = 0;
+                this.activeQuestionIdx = null;
+                this.slideStartTime = null;
+                this.syncView();
+            }
+
+            escapeHTML(str) { 
+                return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : ''; 
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { window.App = new SecureQuizApp(); });
+    </script>
+</body>
+</html>
